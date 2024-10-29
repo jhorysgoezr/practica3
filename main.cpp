@@ -11,14 +11,13 @@ void convertirABinario(int numero, char* binario) {
     binario[8] = '\0';  // Asegurar fin de cadena
 }
 
-// Función para invertir los bits de un bloque
+// Método 1: Invertir bits
 void invertirBits(char* bloque, int tamanio) {
     for (int i = 0; i < tamanio; ++i) {
         bloque[i] = (bloque[i] == '1') ? '0' : '1';
     }
 }
 
-// Función para contar la cantidad de '0's y '1's en un bloque
 void contarCerosYUnos(const char* bloque, int tamanio, int& ceros, int& unos) {
     ceros = 0;
     unos = 0;
@@ -28,103 +27,120 @@ void contarCerosYUnos(const char* bloque, int tamanio, int& ceros, int& unos) {
     }
 }
 
-// Función que invierte cada 2 bits del bloque (sin alterar el primer bit)
 void invertirCadaDosBits(char* bloque, int tamanio) {
     for (int i = 1; i < tamanio; i += 2) {
-        bloque[i] = (bloque[i] == '1') ? '0' : '1'; // Invertir solo el segundo, cuarto, etc.
+        bloque[i] = (bloque[i] == '1') ? '0' : '1';
     }
 }
 
-// Función que invierte cada 3 bits del bloque
 void invertirCadaTresBits(char* bloque, int tamanio) {
     for (int i = 0; i < tamanio - 2; i += 3) {
         swap(bloque[i], bloque[i + 2]);
     }
 }
 
-// Función para dividir los bits en bloques de tamaño n y procesarlos
 void dividirEnBloques(const string& bitsTotales, int n, ofstream& archivoSalida) {
     int longitud = bitsTotales.size();
-    cout << "Bits divididos en bloques de " << n << ":\n";
+    int cerosPrevios = 0, unosPrevios = 0;
 
-    int cerosPrevios = 0, unosPrevios = 0;  // Contadores de ceros y unos del bloque anterior
-
-    // Iterar sobre los bits y agruparlos en bloques de tamaño n
     for (int i = 0; i < longitud; i += n) {
-        char bloque[n + 1];  // Espacio para el bloque y terminador de cadena
-        int tamanioBloque = 0;  // Tamaño real del bloque (en caso de ser parcial)
+        char bloque[n + 1];
+        int tamanioBloque = 0;
 
-        // Copiar los bits al bloque temporal
         for (int j = i; j < i + n && j < longitud; ++j) {
             bloque[tamanioBloque++] = bitsTotales[j];
         }
-        bloque[tamanioBloque] = '\0';  // Terminador de cadena
+        bloque[tamanioBloque] = '\0';
 
-        // Procesar el bloque
         int ceros, unos;
         contarCerosYUnos(bloque, tamanioBloque, ceros, unos);
 
-        // Aplicar condiciones de inversión
         if (i == 0) {
-            // Si es el primer bloque, invertimos todos los bits
             invertirBits(bloque, tamanioBloque);
         } else if (cerosPrevios == unosPrevios) {
-            // Si hay igual cantidad de 1s y 0s en el bloque anterior, se invierten todos los bits
             invertirBits(bloque, tamanioBloque);
         } else if (cerosPrevios > unosPrevios) {
-            // Si hay más ceros que unos en el bloque anterior, se invierte cada 2 bits
             invertirCadaDosBits(bloque, tamanioBloque);
         } else {
-            // Si hay más unos que ceros en el bloque anterior, se invierte cada 3 bits
             invertirCadaTresBits(bloque, tamanioBloque);
         }
 
-        // Escribir el bloque procesado en el archivo de salida
-        archivoSalida << bloque;  // Escribimos el bloque en el archivo
+        archivoSalida << bloque;
 
-        // Actualizar contadores para el próximo bloque
         cerosPrevios = ceros;
         unosPrevios = unos;
     }
 }
 
-// Función para leer el archivo y convertirlo en bloques
-void leerArchivoYConvertirEnBloques(const char* nombreArchivo, int n) {
-    ifstream archivo(nombreArchivo, ios::in);  // Abrimos el archivo en modo lectura
+// Método 2: Desplazar bits
+void desplazarBits(char* bloque, int tamanio) {
+    if (tamanio <= 1) return;
 
-    if (!archivo) {  // Verificamos si el archivo se abrió correctamente
+    char temp = bloque[tamanio - 1];
+    for (int i = tamanio - 1; i > 0; --i) {
+        bloque[i] = bloque[i - 1];
+    }
+    bloque[0] = temp;
+}
+
+void dividirEnBloquesYDesplazar(const string& bitsTotales, int n, ofstream& archivoSalida) {
+    int longitud = bitsTotales.size();
+
+    for (int i = 0; i < longitud; i += n) {
+        char bloque[n + 1];
+        int tamanioBloque = 0;
+
+        for (int j = i; j < i + n && j < longitud; ++j) {
+            bloque[tamanioBloque++] = bitsTotales[j];
+        }
+        bloque[tamanioBloque] = '\0';
+
+        desplazarBits(bloque, tamanioBloque);
+
+        archivoSalida << bloque;
+    }
+}
+
+// Función para leer el archivo y convertirlo en bloques
+void leerArchivoYConvertirEnBloques(const char* nombreArchivo, int n, int metodo) {
+    ifstream archivo(nombreArchivo, ios::in);
+
+    if (!archivo) {
         cout << "Error al abrir el archivo." << endl;
         return;
     }
 
     char caracter;
-    char binario[9];  // Espacio para 8 bits + terminador de cadena
-    string bitsTotales = "";  // Cadena que almacena todos los bits
+    char binario[9];
+    string bitsTotales = "";
 
-    // Leer el archivo y convertir cada carácter en binario
     while (archivo.get(caracter)) {
-        convertirABinario((int)caracter, binario);  // Convertimos a binario
-        bitsTotales += binario;  // Concatenamos los bits en una cadena
+        convertirABinario((int)caracter, binario);
+        bitsTotales += binario;
     }
 
-    archivo.close();  // Cerramos el archivo
+    archivo.close();
 
-    // Crear archivo de salida para guardar el resultado
     ofstream archivoSalida("resultado.txt");
     if (!archivoSalida) {
         cout << "Error al crear el archivo de salida." << endl;
         return;
     }
 
-    // Dividir los bits en bloques de tamaño n y guardar en el archivo de salida
-    dividirEnBloques(bitsTotales, n, archivoSalida);
+    if (metodo == 1) {
+        dividirEnBloques(bitsTotales, n, archivoSalida);
+    } else if (metodo == 2) {
+        dividirEnBloquesYDesplazar(bitsTotales, n, archivoSalida);
+    } else {
+        cout << "Método no válido." << endl;
+    }
 
-    archivoSalida.close();  // Cerramos el archivo de salida
+    archivoSalida.close();
 }
 
 int main() {
-    const char* nombreArchivo = "input.txt";  // Nombre del archivo a leer
-    int n;
+    const char* nombreArchivo = "input.txt";
+    int n, metodo;
 
     cout << "Ingrese el tamaño de los bloques (n): ";
     cin >> n;
@@ -134,6 +150,9 @@ int main() {
         return 1;
     }
 
-    leerArchivoYConvertirEnBloques(nombreArchivo, n);
+    cout << "Seleccione el método de codificación (1 para invertir bits, 2 para desplazar bits): ";
+    cin >> metodo;
+
+    leerArchivoYConvertirEnBloques(nombreArchivo, n, metodo);
     return 0;
 }
