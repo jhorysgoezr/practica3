@@ -43,7 +43,7 @@ void invertirCadaTresBits(char* bloque, int tamanio) {
 }
 
 // Función para dividir los bits en bloques de tamaño n y procesarlos
-void dividirEnBloques(const string& bitsTotales, int n) {
+void dividirEnBloques(const string& bitsTotales, int n, ofstream& archivoSalida) {
     int longitud = bitsTotales.size();
     cout << "Bits divididos en bloques de " << n << ":\n";
 
@@ -79,8 +79,8 @@ void dividirEnBloques(const string& bitsTotales, int n) {
             invertirCadaTresBits(bloque, tamanioBloque);
         }
 
-        // Mostrar el bloque procesado
-        cout << "Bloque " << (i / n) + 1 << ": " << bloque << endl;
+        // Escribir el bloque procesado en el archivo de salida
+        archivoSalida << bloque;  // Escribimos el bloque en el archivo
 
         // Actualizar contadores para el próximo bloque
         cerosPrevios = ceros;
@@ -109,8 +109,17 @@ void leerArchivoYConvertirEnBloques(const char* nombreArchivo, int n) {
 
     archivo.close();  // Cerramos el archivo
 
-    // Dividir los bits en bloques de tamaño n y mostrarlos
-    dividirEnBloques(bitsTotales, n);
+    // Crear archivo de salida para guardar el resultado
+    ofstream archivoSalida("resultado.txt");
+    if (!archivoSalida) {
+        cout << "Error al crear el archivo de salida." << endl;
+        return;
+    }
+
+    // Dividir los bits en bloques de tamaño n y guardar en el archivo de salida
+    dividirEnBloques(bitsTotales, n, archivoSalida);
+
+    archivoSalida.close();  // Cerramos el archivo de salida
 }
 
 int main() {
